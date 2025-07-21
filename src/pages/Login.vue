@@ -1,7 +1,11 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
+import { useRouter } from "vue-router";
 import logo from "@/assets/image 30.png";
 import illustrationPlaceholder from "@/assets/image 31.png";
+import { login } from "../api/auth";
+
+const router = useRouter();
 
 const showPassword = ref(false);
 const passwordType = computed(() => (showPassword.value ? "text" : "password"));
@@ -9,19 +13,39 @@ const passwordType = computed(() => (showPassword.value ? "text" : "password"));
 function togglePassword() {
   showPassword.value = !showPassword.value;
 }
+
+const email = ref("");
+const password = ref("");
+const loading = ref(false);
+const error = ref("");
+
+async function handleLogin(e: Event) {
+  e.preventDefault();
+  error.value = "";
+  loading.value = true;
+  try {
+    const result = await login({
+      email: email.value,
+      password: password.value,
+    });
+    document.cookie = `token=${result.accessToken}; path=/;`;
+    router.push("/dashboard");
+  } catch (err: any) {
+    error.value = err.message || "Login failed. Please try again.";
+  } finally {
+    loading.value = false;
+  }
+}
 </script>
 
 <template>
   <div class="min-h-screen flex flex-col md:flex-row bg-white">
-    <!-- Left Side (Desktop Only) -->
     <div
       class="hidden md:flex flex-col justify-center items-center w-1/2 bg-purple-100 rounded-r-3xl p-12"
     >
-      <!-- Logo Placeholder -->
       <div class="mb-8">
         <img :src="logo" alt="Team Achieve Logo" class="h-16 w-auto mx-auto" />
       </div>
-      <!-- Illustration Placeholder -->
       <div class="mb-8">
         <img
           :src="illustrationPlaceholder"
@@ -37,11 +61,9 @@ function togglePassword() {
       </div>
     </div>
 
-    <!-- Right Side (Form) -->
     <div
       class="flex flex-1 flex-col justify-center items-center px-4 py-8 md:py-0 md:px-16"
     >
-      <!-- Logo (Mobile Only) -->
       <div class="md:hidden mb-8">
         <img :src="logo" alt="Team Achieve Logo" class="h-16 w-auto mx-auto" />
       </div>
@@ -51,13 +73,15 @@ function togglePassword() {
       <p class="text-gray-600 mb-6 text-center">
         Enter your email address and password to access your account.
       </p>
-      <form class="w-full max-w-md space-y-4">
+      <form class="w-full max-w-md space-y-4" @submit="handleLogin">
+        <div v-if="error" class="text-red-600 text-center">{{ error }}</div>
         <div>
           <label for="email" class="block text-gray-800 font-medium mb-1"
             >Email Address <span class="text-red-500">*</span></label
           >
           <input
             id="email"
+            v-model="email"
             type="email"
             required
             placeholder="Enter your email"
@@ -71,6 +95,7 @@ function togglePassword() {
           <div class="relative flex items-center">
             <input
               id="password"
+              v-model="password"
               :type="passwordType"
               required
               placeholder="Enter your password"
@@ -81,8 +106,8 @@ function togglePassword() {
               class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 focus:outline-none border-l border-gray-300 pr-3.5"
               aria-label="Show password"
               @click="togglePassword"
+              tabindex="0"
             >
-              <!-- Updated Eye Icon -->
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 width="28"
@@ -123,9 +148,11 @@ function togglePassword() {
         </div>
         <button
           type="submit"
-          class="w-full bg-purple-800 text-white font-semibold rounded-lg py-3 mt-2 hover:bg-purple-900 transition"
+          :disabled="loading"
+          class="w-full bg-purple-800 text-white font-semibold rounded-lg py-3 mt-2 hover:bg-purple-900 transition disabled:opacity-50"
         >
-          Sign in
+          <span v-if="loading">Signing in...</span>
+          <span v-else>Sign in</span>
         </button>
       </form>
       <p class="mt-6 text-center text-gray-700">

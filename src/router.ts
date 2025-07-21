@@ -7,7 +7,11 @@ const routes: Array<RouteRecordRaw> = [
     name: "Login",
     component: () => import("./pages/Login.vue"),
   },
-  // Add more routes here as needed
+  {
+    path: "/dashboard",
+    name: "Dashboard",
+    component: () => import("./pages/Dashboard.vue"),
+  },
 ];
 
 const router = createRouter({
